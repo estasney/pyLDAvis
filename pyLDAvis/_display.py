@@ -5,6 +5,7 @@ import warnings
 import random
 import json
 import jinja2
+from jinja2 import Environment, PackageLoader, select_autoescape
 import re
 from ._server import serve
 from .utils import get_id, write_ipynb_local_js, NumPyEncoder
@@ -15,100 +16,16 @@ __all__ = ["prepared_data_to_html", "display",
            "show", "save_html", "save_json",
            "enable_notebook", "disable_notebook"]
 
+env = Environment(
+        loader=PackageLoader('pyLDAvis', 'templates'),
+        autoescape=select_autoescape(['html', 'xml']),
+        )
 
-# Simple HTML template. This works in standalone web pages for single visualizations,
-# but will not work within the IPython notebook due to the presence of
-# requirejs
-SIMPLE_HTML = jinja2.Template("""
-<script type="text/javascript" src="{{ d3_url }}"></script>
-<script type="text/javascript" src="{{ ldavis_url }}"></script>
-<link rel="stylesheet" type="text/css" href="{{ ldavis_css_url }}">
+display_macros = env.get_template("macros.html").make_module()
 
-<div id={{ visid }}></div>
-<script type="text/javascript">
-   !function(LDAvis){
-       new LDAvis("#" + {{ visid }}, {{ vis_json }});
-   }(LDAvis);
-</script>
-""")
-
-
-# RequireJS template.  If requirejs and jquery are not defined, this will
-# result in an error.  This is suitable for use within the IPython notebook.
-REQUIREJS_HTML = jinja2.Template("""
-
-<link rel="stylesheet" type="text/css" href="{{ ldavis_css_url }}">
-
-<div id={{ visid }}></div>
-<script type="text/javascript">
-
-var {{ visid_raw }}_data = {{ vis_json }};
-if(typeof(window.LDAvis) !== "undefined"){
-   !function(LDAvis){
-       new LDAvis("#" + {{ visid }}, {{ visid_raw }}_data);
-   }(LDAvis);
-}else{
-  require.config({paths: {d3: "{{ d3_url[:-3] }}"}});
-  require(["d3"], function(d3){
-    window.d3 = d3;
-    $.getScript("{{ ldavis_url }}", function(){
-       new LDAvis("#" + {{ visid }}, {{ visid_raw }}_data);
-    });
-  });
-}
-</script>
-""")
-
-
-# General HTML template.  This should work correctly whether or not requirejs
-# is defined, and whether it's embedded in a notebook or in a standalone
-# HTML page.
-GENERAL_HTML = jinja2.Template("""
-<link rel="stylesheet" type="text/css" href="{{ ldavis_css_url }}">
-
-
-<div id={{ visid }}></div>
-<script type="text/javascript">
-
-var {{ visid_raw }}_data = {{ vis_json }};
-
-function LDAvis_load_lib(url, callback){
-  var s = document.createElement('script');
-  s.src = url;
-  s.async = true;
-  s.onreadystatechange = s.onload = callback;
-  s.onerror = function(){console.warn("failed to load library " + url);};
-  document.getElementsByTagName("head")[0].appendChild(s);
-}
-
-if(typeof(LDAvis) !== "undefined"){
-   // already loaded: just create the visualization
-   !function(LDAvis){
-       new LDAvis("#" + {{ visid }}, {{ visid_raw }}_data);
-   }(LDAvis);
-}else if(typeof define === "function" && define.amd){
-   // require.js is available: use it to load d3/LDAvis
-   require.config({paths: {d3: "{{ d3_url[:-3] }}"}});
-   require(["d3"], function(d3){
-      window.d3 = d3;
-      LDAvis_load_lib("{{ ldavis_url }}", function(){
-        new LDAvis("#" + {{ visid }}, {{ visid_raw }}_data);
-      });
-    });
-}else{
-    // require.js not available: dynamically load d3 & LDAvis
-    LDAvis_load_lib("{{ d3_url }}", function(){
-         LDAvis_load_lib("{{ ldavis_url }}", function(){
-                 new LDAvis("#" + {{ visid }}, {{ visid_raw }}_data);
-            })
-         });
-}
-</script>
-""")
-
-TEMPLATE_DICT = {"simple": SIMPLE_HTML,
-                 "notebook": REQUIREJS_HTML,
-                 "general": GENERAL_HTML}
+TEMPLATE_DICT = {"simple": display_macros.simple_html,
+                 "notebook": display_macros.requirejs_html,
+                 "general": display_macros.general_html}
 
 
 def prepared_data_to_html(data, d3_url=None, ldavis_url=None, ldavis_css_url=None,
@@ -170,7 +87,7 @@ def prepared_data_to_html(data, d3_url=None, ldavis_url=None, ldavis_css_url=Non
     elif re.search('\s', visid):
         raise ValueError("visid must not contain spaces")
 
-    return template.render(visid=json.dumps(visid),
+    return template(visid=json.dumps(visid),
                            visid_raw=visid,
                            d3_url=d3_url,
                            ldavis_url=ldavis_url,

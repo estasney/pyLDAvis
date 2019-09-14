@@ -1,0 +1,83 @@
+{% macro simple_html(d3_url, ldavis_url, ldavis_css_url, visid, vis_json) %}
+
+    <script type="text/javascript" src="{{d3_url|safe}}"></script>
+    <script type="text/javascript" src="{{ldavis_url|safe}}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ldavis_css_url|safe}}">
+
+    <div id={{visid|safe}}></div>
+    <script type="text/javascript">
+        !function (LDAvis) {
+            new LDAvis("#" + {{visid|safe}}, {{vis_json|safe}});
+        }(LDAvis);
+    </script>
+
+{% endmacro %}
+
+
+{% macro requirejs_html(d3_url, ldavis_url, ldavis_css_url, visid, vis_json, visid_raw) %}
+    <link rel="stylesheet" type="text/css" href="{{ldavis_css_url|safe}}">
+
+    <div id={{visid|safe}}></div>
+    <script type="text/javascript">
+
+        var {{visid_raw|safe}}_data = {{vis_json|safe}};
+        if (typeof (window.LDAvis) !== "undefined") {
+            !function (LDAvis) {
+                new LDAvis("#" + {{visid|safe}}, {{visid_raw|safe}}_data);
+            }(LDAvis);
+        } else {
+            require.config({paths: {d3: "{{d3_url[:-3]|safe}}"|safe}});
+            require(["d3"], function (d3) {
+                window.d3 = d3;
+                $.getScript("{{ldavis_url|safe}}", function () {
+                    new LDAvis("#" + {{visid|safe}}, {{visid_raw|safe}}_data);
+                });
+            });
+        }
+    </script>
+{% endmacro %}
+
+{% macro general_html(d3_url, ldavis_url, ldavis_css_url, visid, vis_json, visid_raw) %}
+    <link rel="stylesheet" type="text/css" href="{{ldavis_css_url|safe}}">
+
+
+    <div id={{visid|safe}}></div>
+    <script type="text/javascript">
+
+        var {{visid_raw|safe}}_data = {{vis_json|safe}};
+
+        function LDAvis_load_lib(url, callback) {
+            var s = document.createElement('script');
+            s.src = url;
+            s.async = true;
+            s.onreadystatechange = s.onload = callback;
+            s.onerror = function () {
+                console.warn("failed to load library " + url);
+            };
+            document.getElementsByTagName("head")[0].appendChild(s);
+        }
+
+        if (typeof (LDAvis) !== "undefined") {
+            // already loaded: just create the visualization
+            !function (LDAvis) {
+                new LDAvis("#" + {{visid|safe}}, {{visid_raw|safe}}_data);
+            }(LDAvis);
+        } else if (typeof define === "function" && define.amd) {
+            // require.js is available: use it to load d3/LDAvis
+            require.config({paths: {d3: "{{d3_url[:-3]|safe}}"|safe}});
+            require(["d3"], function (d3) {
+                window.d3 = d3;
+                LDAvis_load_lib("{{ldavis_url|safe}}", function () {
+                    new LDAvis("#" + {{visid|safe}}, {{visid_raw|safe}}_data);
+                });
+            });
+        } else {
+            // require.js not available: dynamically load d3 & LDAvis
+            LDAvis_load_lib("{{d3_url|safe}}", function () {
+                LDAvis_load_lib("{{ldavis_url|safe}}", function () {
+                    new LDAvis("#" + {{visid|safe}}, {{visid_raw|safe}}_data);
+                })
+            });
+        }
+    </script>
+{% endmacro %}
