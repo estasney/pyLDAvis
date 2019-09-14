@@ -4,7 +4,7 @@
 
 'use strict';
 
-var LDAvis = function(to_select, data_or_file_name) {
+var LDAvis = function(to_select, data) {
 
     // This section sets up the logic for event handling
     var current_clicked = {
@@ -78,6 +78,8 @@ var LDAvis = function(to_select, data_or_file_name) {
     var topicDown = topicID + "-down";
     var topicUp = topicID + "-up";
     var topicClear = topicID + "-clear";
+    var modelNext = topicID + "-next-model";
+    var modelPrevious = topicID + "-previous-model";
 
     var leftPanelID = visID + "-leftpanel";
     var barFreqsID = visID + "-bar-freqs";
@@ -640,6 +642,18 @@ var LDAvis = function(to_select, data_or_file_name) {
             clear.setAttribute("style", "margin-left: 5px");
             clear.innerHTML = "Clear Topic";
             topicDiv.appendChild(clear);
+            
+            var nextmodel = document.createElement("button");
+            nextmodel.setAttribute("id", modelNext);
+            nextmodel.setAttribute("style", "margin-left: 5px");
+            nextmodel.innerHTML = "Next Model";
+            topicDiv.appendChild(nextmodel);
+
+            var previousmodel = document.createElement("button");
+            nextmodel.setAttribute("id", modelPrevious);
+            nextmodel.setAttribute("style", "margin-left: 5px");
+            nextmodel.innerHTML = "Next Model";
+            topicDiv.appendChild(previousmodel);
 
             // lambda inputs
             //var lambdaDivLeft = 8 + mdswidth + margin.left + termwidth;
@@ -1371,10 +1385,10 @@ var LDAvis = function(to_select, data_or_file_name) {
 
     }
 
-    if (typeof data_or_file_name === 'string')
-        d3.json(data_or_file_name, function(error, data) {visualize(data);});
+    if (typeof data === 'string')
+        d3.json(data, function(error, data) {visualize(data);});
     else
-        visualize(data_or_file_name);
+        visualize(data);
 
     // var current_clicked = {
     //     what: "nothing",
