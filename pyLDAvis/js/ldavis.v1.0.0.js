@@ -652,7 +652,7 @@ var LDAvis = function(to_select, data) {
             var previousmodel = document.createElement("button");
             nextmodel.setAttribute("id", modelPrevious);
             nextmodel.setAttribute("style", "margin-left: 5px");
-            nextmodel.innerHTML = "Next Model";
+            nextmodel.innerHTML = "Previous Model";
             topicDiv.appendChild(previousmodel);
 
             // lambda inputs
