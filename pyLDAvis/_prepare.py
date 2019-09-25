@@ -382,7 +382,7 @@ def prepare(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequenc
         else:
             logging.warning('Unknown mds `%s`, switch to PCoA' % mds)
             mds = js_PCoA
-
+    print("c")
     topic_term_dists = _df_with_names(topic_term_dists, 'topic', 'term')
     doc_topic_dists = _df_with_names(doc_topic_dists, 'doc', 'topic')
     term_frequency = _series_with_name(term_frequency, 'term_frequency')
