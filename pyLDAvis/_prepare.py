@@ -398,6 +398,7 @@ def prepare(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequenc
     term_frequency = _series_with_name(term_frequency, 'term_frequency')
     doc_lengths = np.array(doc_lengths)
     # vocab = _series_with_name(vocab, 'vocab')
+    vocab = np.array(vocab)
     # _input_validate(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequency)
     R = min(R, len(vocab))
 
