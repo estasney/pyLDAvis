@@ -264,10 +264,10 @@ def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_f
         new_topic_id, (original_topic_id, topic_terms) = tup
         term_ix = topic_terms.unique()
         return pd.DataFrame({'Term': vocab[term_ix],
-                             'Freq': term_topic_freq.loc[original_topic_id, term_ix],
+                             'Freq': term_topic_freq[original_topic_id, term_ix],
                              'Total': term_frequency[term_ix],
-                             'logprob': log_ttd.loc[original_topic_id, term_ix].round(4),
-                             'loglift': log_lift.loc[original_topic_id, term_ix].round(4),
+                             'logprob': log_ttd[original_topic_id, term_ix].round(4),
+                             'loglift': log_lift[original_topic_id, term_ix].round(4),
                              'Category': 'Topic%d' % new_topic_id})
     import joblib
     joblib.parallel.DEFAULT_BACKEND = 'multiprocessing'
