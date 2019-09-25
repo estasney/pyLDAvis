@@ -225,7 +225,8 @@ def _find_relevance(log_ttd, log_lift, R, lambda_):
 
 
 def _find_relevance_chunks(log_ttd, log_lift, R, lambda_seq):
-    return np.vstack([_find_relevance(log_ttd, log_lift, R, l) for l in lambda_seq])
+    rel_chunk = [_find_relevance(log_ttd, log_lift, R, l) for l in lambda_seq]
+    return np.vstack(rel_chunk)
 
 
 def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_freq,
