@@ -234,7 +234,7 @@ def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_f
 
     # compute the distinctiveness and saliency of the terms:
     # this determines the R terms that are displayed when no topic is selected
-    topic_given_term = topic_term_dists / topic_term_dists.sum()
+    topic_given_term = topic_term_dists / topic_term_dists.sum(axis=0)
     kernel = (topic_given_term * np.log((topic_given_term.T / topic_proportion).T))
     distinctiveness = kernel.sum()
     saliency = term_proportion * distinctiveness
