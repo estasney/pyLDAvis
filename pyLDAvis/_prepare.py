@@ -394,7 +394,7 @@ def prepare(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequenc
     # topic_term_dists = _df_with_names(topic_term_dists, 'topic', 'term')
     topic_term_dists = np.array(topic_term_dists)
     doc_topic_dists = np.array(doc_topic_dists)
-    # doc_topic_dists = np.nan_to_num(doc_topic_dists)
+    doc_topic_dists = np.nan_to_num(doc_topic_dists)
     term_frequency = _series_with_name(term_frequency, 'term_frequency')
     doc_lengths = np.array(doc_lengths)
     # vocab = _series_with_name(vocab, 'vocab')
