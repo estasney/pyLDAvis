@@ -215,12 +215,16 @@ def _job_chunks(l, n_jobs):
 
 
 def _find_relevance(log_ttd, log_lift, R, lambda_):
-    relevance = lambda_ * log_ttd + (1 - lambda_) * log_lift
-    return relevance.T.apply(lambda s: s.sort_values(ascending=False).index).head(R)
+    # relevance = lambda_ * log_ttd + (1 - lambda_) * log_lift
+    relevance = (lambda_ * log_ttd + (1 - lambda_) * log_lift).T
+
+    # Get idx of top R values in relevance
+    relevance_idx = np.argsort(-relevance)[:R]
+    return relevance_idx
 
 
 def _find_relevance_chunks(log_ttd, log_lift, R, lambda_seq):
-    return pd.concat([_find_relevance(log_ttd, log_lift, R, l) for l in lambda_seq])
+    return np.vstack([_find_relevance(log_ttd, log_lift, R, l) for l in lambda_seq])
 
 
 def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_freq,
@@ -251,7 +255,9 @@ def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_f
 
     # compute relevance and top terms for each topic
     log_lift = np.log(topic_term_dists / term_proportion)
+    # log_lift = np.nan_to_num(log_lift)
     log_ttd = np.log(topic_term_dists)
+    # log_ttd = np.nan_to_num(log_ttd)
     lambda_seq = np.arange(0, 1 + lambda_step, lambda_step)
 
     def topic_top_term_df(tup):
@@ -263,10 +269,12 @@ def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_f
                              'logprob': log_ttd.loc[original_topic_id, term_ix].round(4),
                              'loglift': log_lift.loc[original_topic_id, term_ix].round(4),
                              'Category': 'Topic%d' % new_topic_id})
-
-    top_terms = pd.concat(Parallel(n_jobs=n_jobs)
+    import joblib
+    joblib.parallel.DEFAULT_BACKEND = 'multiprocessing'
+    top_terms = np.vstack(Parallel(n_jobs=n_jobs)
                           (delayed(_find_relevance_chunks)(log_ttd, log_lift, R, ls)
                           for ls in _job_chunks(lambda_seq, n_jobs)))
+    top_terms = pd.DataFrame(top_terms)
     topic_dfs = map(topic_top_term_df, enumerate(top_terms.T.iterrows(), 1))
     return pd.concat([default_term_info] + list(topic_dfs), sort=True)
 
@@ -299,7 +307,7 @@ def _token_table(topic_info, term_topic_freq, vocab, term_frequency):
 
 def prepare(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequency,
             R=30, lambda_step=0.01, mds=js_PCoA, n_jobs=-1,
-            plot_opts={'xlab': 'PC1', 'ylab': 'PC2'}, sort_topics=True):
+            plot_opts={'xlab': 'PC1', 'ylab': 'PC2'}, sort_topics=False):
     """Transforms the topic model distributions and related corpus data into
     the data structures needed for the visualization.
 
@@ -383,25 +391,28 @@ def prepare(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequenc
             logging.warning('Unknown mds `%s`, switch to PCoA' % mds)
             mds = js_PCoA
 
-    topic_term_dists = _df_with_names(topic_term_dists, 'topic', 'term')
-    doc_topic_dists = _df_with_names(doc_topic_dists, 'doc', 'topic')
+    # topic_term_dists = _df_with_names(topic_term_dists, 'topic', 'term')
+    topic_term_dists = np.array(topic_term_dists)
+    doc_topic_dists = np.array(doc_topic_dists)
+    doc_topic_dists = np.nan_to_num(doc_topic_dists)
     term_frequency = _series_with_name(term_frequency, 'term_frequency')
-    doc_lengths = _series_with_name(doc_lengths, 'doc_length')
-    vocab = _series_with_name(vocab, 'vocab')
-    _input_validate(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequency)
+    doc_lengths = np.array(doc_lengths)
+    # vocab = _series_with_name(vocab, 'vocab')
+    # _input_validate(topic_term_dists, doc_topic_dists, doc_lengths, vocab, term_frequency)
     R = min(R, len(vocab))
 
-    topic_freq = (doc_topic_dists.T * doc_lengths).T.sum()
+    topic_freq = (doc_topic_dists.T * doc_lengths).sum(axis=1)
     # topic_freq       = np.dot(doc_topic_dists.T, doc_lengths)
     if (sort_topics):
-        topic_proportion = (topic_freq / topic_freq.sum()).sort_values(ascending=False)
+        topic_proportion = (topic_freq / topic_freq.sum())
+        topic_order = topic_proportion.argsort()[::-1]
     else:
         topic_proportion = (topic_freq / topic_freq.sum())
+        topic_order = np.arange(topic_proportion.shape[0])
 
-    topic_order = topic_proportion.index
     # reorder all data based on new ordering of topics
     topic_freq = topic_freq[topic_order]
-    topic_term_dists = topic_term_dists.iloc[topic_order]
+    topic_term_dists = topic_term_dists[topic_order]
     doc_topic_dists = doc_topic_dists[topic_order]
 
     # token counts for each term-topic combination (widths of red bars)
