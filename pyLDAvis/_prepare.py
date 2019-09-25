@@ -213,14 +213,15 @@ def _job_chunks(l, n_jobs):
 
     return _chunks(l, n_chunks)
 
+def _relevance_sort(a):
+    return np.argsort(-a)
 
 def _find_relevance(log_ttd, log_lift, R, lambda_):
-    # relevance = lambda_ * log_ttd + (1 - lambda_) * log_lift
     relevance = (lambda_ * log_ttd + (1 - lambda_) * log_lift).T
 
     # Get idx of top R values in relevance
-    relevance_idx = np.argsort(-relevance)[:R]
-    return relevance_idx
+    relevance_idx = np.apply_along_axis(_relevance_sort, 0, relevance)
+    return relevance_idx[:R]
 
 
 def _find_relevance_chunks(log_ttd, log_lift, R, lambda_seq):
