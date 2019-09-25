@@ -216,6 +216,7 @@ def _job_chunks(l, n_jobs):
 
 def _find_relevance(log_ttd, log_lift, R, lambda_):
     relevance = lambda_ * log_ttd + (1 - lambda_) * log_lift
+    r = relevance.T.apply(lambda s: s.sort_values(ascending=False).index).head(R)
     return relevance.T.apply(lambda s: s.sort_values(ascending=False).index).head(R)
 
 
