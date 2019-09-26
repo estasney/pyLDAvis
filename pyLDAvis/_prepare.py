@@ -322,7 +322,7 @@ def _token_table(topic_info, term_topic_freq, vocab, term_frequency):
         .reset_index().set_index('term').query('Freq >= 0.5')
 
     token_table['Freq'] = token_table['Freq'].round()
-    token_table['Term'] = vocab[token_table.index.values].values
+    token_table['Term'] = vocab[token_table.index.values]
     # Normalize token frequencies:
     token_table['Freq'] = token_table.Freq / term_frequency[token_table.index]
     return token_table.sort_values(by=['Term', 'Topic'])
