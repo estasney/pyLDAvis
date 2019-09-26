@@ -214,7 +214,23 @@ def _job_chunks(l, n_jobs):
     return _chunks(l, n_chunks)
 
 def _relevance_sort(a):
-    return np.argsort(-a)
+    # for nan values, argsort returns their index in no particular order
+    # pandas sorts
+    # y = np.array([(i, np.isnan(c), c) for i, c in enumerate(a)], dtype=[('idx', int), ('isnan', bool), ('val', np.float64)])
+
+    # preserve the original index position in column 0
+    y = np.hstack([np.arange(a.shape[0]).reshape(-1, 1), a.reshape(-1, 1)])
+
+    real_y_idx = np.where(~np.isnan(y[:, 1]))
+    real_y = y[real_y_idx]
+
+    # use column 1 (the values to argsort)
+    real_idx = real_y[real_y[:,1].argsort()[::-1]][:, 0].astype(int)
+
+    # assume if not in real_idx, other idx is non real
+    non_real_idx = np.setdiff1d(np.arange(0, a.shape[0]), real_idx)
+
+    return np.concatenate([real_idx, non_real_idx])
 
 def _find_relevance(log_ttd, log_lift, R, lambda_):
     relevance = (lambda_ * log_ttd + (1 - lambda_) * log_lift).T
