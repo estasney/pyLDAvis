@@ -313,6 +313,7 @@ def _token_table(topic_info, term_topic_freq, vocab, term_frequency):
     top_topic_terms_freq = term_topic_freq[:,term_ix]
     # use the new ordering for the topics
     K = len(term_topic_freq)
+    top_topic_terms_freq = pd.DataFrame(top_topic_terms_freq)
     top_topic_terms_freq.index = range(1, K + 1)
     top_topic_terms_freq.index.name = 'Topic'
 
