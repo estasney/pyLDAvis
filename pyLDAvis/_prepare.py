@@ -316,7 +316,7 @@ def _token_table(topic_info, term_topic_freq, vocab, term_frequency):
     top_topic_terms_freq = pd.DataFrame(top_topic_terms_freq)
     top_topic_terms_freq.index = range(1, K + 1)
     top_topic_terms_freq.index.name = 'Topic'
-
+    top_topic_terms_freq.columns.name = 'term'
     # we filter to Freq >= 0.5 to avoid sending too much data to the browser
     token_table = pd.DataFrame({'Freq': top_topic_terms_freq.unstack()})\
         .reset_index().set_index('term').query('Freq >= 0.5')
