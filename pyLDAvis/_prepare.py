@@ -292,7 +292,9 @@ def _topic_info(topic_term_dists, topic_proportion, term_frequency, term_topic_f
     top_terms = np.vstack(Parallel(n_jobs=n_jobs)
                           (delayed(_find_relevance_chunks)(log_ttd, log_lift, R, ls)
                           for ls in _job_chunks(lambda_seq, n_jobs)))
-    top_terms = pd.DataFrame(top_terms)
+    # Create an index to mimic pd.concat([series])
+    mimic_index = np.vstack([np.arange(0, R).reshape(-1, 1) for i in np.arange(top_terms.shape[0]//R)]).flatten()
+    top_terms = pd.DataFrame(top_terms, index=mimic_index)
     topic_dfs = map(topic_top_term_df, enumerate(top_terms.T.iterrows(), 1))
     return pd.concat([default_term_info] + list(topic_dfs), sort=True)
 
